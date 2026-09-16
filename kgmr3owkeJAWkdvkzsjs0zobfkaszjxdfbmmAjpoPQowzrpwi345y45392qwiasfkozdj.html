@@ -575,7 +575,7 @@
                 deleted: "Image deleted successfully.",
                 deleteError: "Could not delete image.",
                 confirmDelete: "Permanently delete this image?",
-                removeBtn: "Remove image"
+                removeBtn: "Remove image", logoFirst: "Please upload the logo first.",
             },
             ar: {
                 brand: "المصمم كريم",
@@ -601,7 +601,7 @@
                 deleted: "تم حذف الصورة بنجاح.",
                 deleteError: "لم يتم حذف الصورة.",
                 confirmDelete: "هل تريد حذف هذه الصورة نهائياً؟",
-                removeBtn: "حذف الصورة"
+                removeBtn: "حذف الصورة",logoFirst: "يرجى رفع الشعار أولاً.",
             }
         };
 
@@ -658,24 +658,56 @@
             });
         });
 
-        function handleFiles(key, files) {
-            if (key === "packages-logo") {
-                selected.packages.logo = files[0] || null;
-                renderPreview("packages");
-                updatePackagesButton();
-                return;
-            }
-            if (key === "packages-banner") {
-                selected.packages.banner = files[0] || null;
-                renderPreview("packages");
-                updatePackagesButton();
-                return;
-            }
-            selected[key] = files;
-            renderPreview(key);
-            updateButton(key);
-        }
+ function handleFiles(key, files) {
+    const lang = document.documentElement.lang === "ar" ? "ar" : "en";
+    const t = translations[lang];
 
+    if (key === "packages-logo") {
+        selected.packages.logo = files[0] || null;
+        // If logo was just removed, clear banner too
+        if (!selected.packages.logo) {
+            selected.packages.banner = null;
+            const bannerInput = document.querySelector('[data-input="packages-banner"]');
+            if (bannerInput) bannerInput.value = "";
+        }
+        renderPreview("packages");
+        updatePackagesButton();
+        updateBannerLock();
+        return;
+    }
+
+    if (key === "packages-banner") {
+        // 🚫 Guard: banner can only be set if logo exists
+        if (!selected.packages.logo) {
+            showStatus("packages", "error", t.logoFirst);
+            // Reset the input
+            const input = document.querySelector('[data-input="packages-banner"]');
+            if (input) input.value = "";
+            return;
+        }
+        selected.packages.banner = files[0] || null;
+        renderPreview("packages");
+        updatePackagesButton();
+        return;
+    }
+
+    selected[key] = files;
+    renderPreview(key);
+    updateButton(key);
+}
+function updateBannerLock() {
+    const bannerZone = document.querySelector('[data-drop="packages-banner"]');
+    const bannerInput = document.querySelector('[data-input="packages-banner"]');
+    if (!bannerZone) return;
+
+    if (selected.packages.logo) {
+        bannerZone.classList.remove("locked");
+        if (bannerInput) bannerInput.disabled = false;
+    } else {
+        bannerZone.classList.add("locked");
+        if (bannerInput) bannerInput.disabled = true;
+    }
+}
         function renderPreview(catKey) {
             const strip = document.querySelector(`[data-preview="${catKey}"]`);
             if (!strip) return;
@@ -822,7 +854,7 @@
             el.innerHTML = `<i class="bi bi-${type === "success" ? "check-circle" : "exclamation-triangle"}"></i> ${msg}`;
             setTimeout(() => el.classList.remove("active"), 4000);
         }
-
+        updateBannerLock();
         // ===== Load existing images with remove buttons =====
         async function refreshExisting() {
             try {

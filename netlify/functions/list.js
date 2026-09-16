@@ -13,25 +13,28 @@ export default async () => {
     for (const cat of categories) {
       const { blobs } = await store.list({ prefix: `${cat}/` });
 
-      result[cat] = await Promise.all(
-        blobs.map(async (b) => {
-          const meta = await store.getMetadata(b.key);
-          const md = (meta && meta.metadata) || {};
+      result[cat] = blobs
+        .map((b) => {
+          // Determine subtype from the key path
+          let subtype = "";
+          if (b.key.startsWith("packages/logo/")) subtype = "logo";
+          else if (b.key.startsWith("packages/banner/")) subtype = "banner";
+
           return {
             key: b.key,
             url: `/uploads/${b.key}`,
-            uploadedAt: md.uploadedAt || "",
-            subtype: md.subtype || "",
+            subtype,
+            uploadedAt: b.uploadedAt || "",
           };
         })
-      );
-
-      // Sort by uploadedAt ascending (oldest first)
-      result[cat].sort((a, b) => {
-        if (!a.uploadedAt) return -1;
-        if (!b.uploadedAt) return 1;
-        return a.uploadedAt.localeCompare(b.uploadedAt);
-      });
+        .sort((a, b) => {
+          // For packages, sort logo before banner
+          if (a.subtype && b.subtype) {
+            if (a.subtype === "logo" && b.subtype === "banner") return -1;
+            if (a.subtype === "banner" && b.subtype === "logo") return 1;
+          }
+          return (a.uploadedAt || "").localeCompare(b.uploadedAt || "");
+        });
     }
 
     return new Response(JSON.stringify(result), {

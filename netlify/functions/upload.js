@@ -1,33 +1,25 @@
 import { getStore } from "@netlify/blobs";
-import { randomUUID } from "crypto";
 
-export default async (request, context) => {
+export default async (request) => {
   if (request.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
 
   try {
     const formData = await request.formData();
-    const category = formData.get("category"); // logos | packages | posters | websites
+    const category = formData.get("category");
+    const subtype = formData.get("subtype"); // "logo" | "banner" | null
     const files = formData.getAll("files");
 
     const validCategories = ["logos", "packages", "posters", "websites"];
-    const subfolder = subtype ? `${subtype}/` : "";
     if (!validCategories.includes(category)) {
-      return new Response(JSON.stringify({ error: "Invalid category" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return json({ error: "Invalid category" }, 400);
     }
 
     if (!files || files.length === 0) {
-      return new Response(JSON.stringify({ error: "No files provided" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return json({ error: "No files provided" }, 400);
     }
 
-    // Site-scoped store — persists across ALL deploys
     const store = getStore({
       name: "kdes-images",
       consistency: "strong",
@@ -37,14 +29,25 @@ export default async (request, context) => {
 
     for (const file of files) {
       if (!(file instanceof File)) continue;
-
-      // Validate it's an image
-      if (!file.type.startsWith("image/")) {
-        continue;
-      }
+      if (!file.type.startsWith("image/")) continue;
 
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const key = `${category}/${randomUUID()}.${ext}`;
+      let key;
+
+      if (category === "packages" && subtype) {
+        // ✅ Force fixed names so logo & banner can never mix
+        if (subtype === "logo") {
+          key = `packages/logo/current.${ext}`;
+        } else if (subtype === "banner") {
+          key = `packages/banner/current.${ext}`;
+        } else {
+          return json({ error: "Invalid package subtype" }, 400);
+        }
+      } else {
+        // Other categories: keep unique names (multiple allowed)
+        const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        key = `${category}/${unique}.${ext}`;
+      }
 
       await store.set(key, file, {
         metadata: {
@@ -52,6 +55,7 @@ export default async (request, context) => {
           originalName: file.name,
           uploadedAt: new Date().toISOString(),
           category,
+          subtype: subtype || "",
         },
       });
 
@@ -64,33 +68,17 @@ export default async (request, context) => {
       });
     }
 
-    // Also return the current index of all images per category
-    const index = await getCategoryIndex(store);
-
-    return new Response(
-      JSON.stringify({ success: true, uploaded, index }),
-      { headers: { "Content-Type": "application/json" } }
-    );
+    return json({ success: true, uploaded });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err.message || "Upload failed" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return json({ error: err.message || "Upload failed" }, 500);
   }
 };
 
-async function getCategoryIndex(store) {
-  const result = { logos: [], packages: [], posters: [], websites: [] };
-
-  for (const cat of Object.keys(result)) {
-    const { blobs } = await store.list({ prefix: `${cat}/` });
-    result[cat] = blobs.map((b) => ({
-      key: b.key,
-      url: `/uploads/${b.key}`,
-    }));
-  }
-
-  return result;
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 export const config = {

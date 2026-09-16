@@ -445,22 +445,30 @@
             });
         }
 
-        async function loadDynamicImages() {
-            try {
-                const res = await fetch("/api/list");
-                if (!res.ok) return;
-                const data = await res.json();
-                const dynamic = (data.posters || []).map(item => item.url);
+async function loadDynamicImages() {
+    try {
+        const res = await fetch("/api/list");
+        if (!res.ok) return;
+        const data = await res.json();
+        const items = data.packages || [];
 
-                if (dynamic.length > 0) {
-                    posterFiles = [...STATIC_POSTERS, ...dynamic];
-                    renderPosters();
-                }
-            } catch (err) {
-                console.warn("Could not load dynamic posters:", err);
-            }
+        // With fixed names, there can only be ONE logo and ONE banner
+        const logoItem = items.find(it => it.subtype === "logo");
+        const bannerItem = items.find(it => it.subtype === "banner");
+
+        if (logoItem && bannerItem) {
+            // Replace static packages list with the dynamic one
+            // (since fixed names mean there's only one current package)
+            packagePairs = [
+                ...STATIC_PACKAGES,
+                { l: logoItem.url, b: bannerItem.url }
+            ];
+            renderPackages();
         }
-
+    } catch (err) {
+        console.warn("Could not load dynamic package:", err);
+    }
+}
         function openLightbox(index) {
             currentIndex = index;
             updateLightbox();
