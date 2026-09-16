@@ -488,39 +488,47 @@
             });
         }
 
-        async function loadDynamicImages() {
-            try {
-                const res = await fetch("/api/list");
-                if (!res.ok) return;
-                const data = await res.json();
-                const dynamicItems = data.packages || [];
+  async function loadDynamicImages() {
+    try {
+        const res = await fetch("/api/list");
+        if (!res.ok) return;
+        const data = await res.json();
+        const dynamicItems = data.packages || [];
 
-                // Separate by subtype (folder in key)
-                const dynLogos = dynamicItems.filter(it => it.key.includes("/logo/")).map(it => it.url);
-                const dynBanners = dynamicItems.filter(it => it.key.includes("/banner/")).map(it => it.url);
+        // Primary method: use `subtype` field returned by list.js
+        let dynLogos = dynamicItems
+            .filter(it => it.subtype === "logo" || it.key.includes("/logo/"))
+            .map(it => it.url);
 
-                // Fallback: if subtype folders missing, pair in upload order
-                const logos = dynLogos.length ? dynLogos : dynamicItems.filter((_, i) => i % 2 === 0).map(it => it.url);
-                const banners = dynBanners.length ? dynBanners : dynamicItems.filter((_, i) => i % 2 === 1).map(it => it.url);
+        let dynBanners = dynamicItems
+            .filter(it => it.subtype === "banner" || it.key.includes("/banner/"))
+            .map(it => it.url);
 
-                const dynPairs = [];
-                const maxLen = Math.max(logos.length, banners.length);
-                for (let i = 0; i < maxLen; i++) {
-                    dynPairs.push({
-                        l: logos[i] || banners[i],
-                        b: banners[i] || logos[i]
-                    });
-                }
-
-                if (dynPairs.length > 0) {
-                    packagePairs = [...STATIC_PACKAGES, ...dynPairs];
-                    renderPackages();
-                }
-            } catch (err) {
-                console.warn("Could not load dynamic packages:", err);
-            }
+        // Fallback: if we got NO subtype/path matches at all (old uploads),
+        // pair them based on alternate order — logo first, then banner
+        if (dynLogos.length === 0 && dynBanners.length === 0) {
+            dynLogos = dynamicItems.filter((_, i) => i % 2 === 0).map(it => it.url);
+            dynBanners = dynamicItems.filter((_, i) => i % 2 === 1).map(it => it.url);
         }
 
+        const dynPairs = [];
+        const maxLen = Math.max(dynLogos.length, dynBanners.length);
+
+        for (let i = 0; i < maxLen; i++) {
+            dynPairs.push({
+                l: dynLogos[i] || dynBanners[i] || null,
+                b: dynBanners[i] || dynLogos[i] || null,
+            });
+        }
+
+        if (dynPairs.length > 0) {
+            packagePairs = [...STATIC_PACKAGES, ...dynPairs];
+            renderPackages();
+        }
+    } catch (err) {
+        console.warn("Could not load dynamic packages:", err);
+    }
+}
         function openLightbox(index) {
             if (index < 0) return;
             currentIndex = index;

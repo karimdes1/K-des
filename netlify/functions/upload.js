@@ -12,6 +12,7 @@ export default async (request, context) => {
     const files = formData.getAll("files");
 
     const validCategories = ["logos", "packages", "posters", "websites"];
+    const subfolder = subtype ? `${subtype}/` : "";
     if (!validCategories.includes(category)) {
       return new Response(JSON.stringify({ error: "Invalid category" }), {
         status: 400,
