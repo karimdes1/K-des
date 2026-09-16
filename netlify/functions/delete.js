@@ -1,6 +1,11 @@
+import { getUser } from "@netlify/identity";
 import { getStore } from "@netlify/blobs";
 
 export default async (request) => {
+    
+  if (!user || !user.roles?.includes("admin")) {
+    return new Response("Unauthorized", { status: 401 });
+  }
   if (request.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }

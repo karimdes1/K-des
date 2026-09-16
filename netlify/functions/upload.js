@@ -1,7 +1,11 @@
 import { getStore } from "@netlify/blobs";
 import { randomUUID } from "crypto";
-
+import { getUser } from "@netlify/identity";
 export default async (request, context) => {
+  
+  if (!user || !user.roles?.includes("admin")) {
+    return new Response("Unauthorized", { status: 401 });
+  }
   if (request.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
