@@ -903,6 +903,45 @@
     </main>
 
     <script>
+        
+        // ===== Netlify Identity: show admin button only for admins =====
+(function initAdminButton() {
+    const adminBtn = document.getElementById("adminBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    function updateUI(user) {
+        const isAdmin = user && Array.isArray(user.roles) && user.roles.includes("admin");
+        adminBtn.style.display = isAdmin ? "inline-flex" : "none";
+        logoutBtn.style.display = user ? "inline-flex" : "none";
+    }
+
+    // Netlify Identity may not be loaded instantly — wait for it
+    function waitForIdentity() {
+        if (!window.netlifyIdentity) {
+            return setTimeout(waitForIdentity, 100);
+        }
+
+        // Initial check
+        updateUI(window.netlifyIdentity.currentUser());
+
+        // React to login / logout events
+        window.netlifyIdentity.on("login", (user) => {
+            updateUI(user);
+            window.netlifyIdentity.close();
+        });
+
+        window.netlifyIdentity.on("logout", () => {
+            updateUI(null);
+        });
+
+        // Wire up the logout button
+        logoutBtn.addEventListener("click", () => {
+            window.netlifyIdentity.logout();
+        });
+    }
+
+    waitForIdentity();
+})();
         const STORAGE_KEY = "kdesLanguage";
         const langSwitch = document.getElementById("langSwitch");
         const scrollProgress = document.getElementById("scrollProgress");
@@ -1076,44 +1115,6 @@
 
         setLanguage(getStoredLanguage());
 
-        // ===== Netlify Identity: show admin button only for admins =====
-(function initAdminButton() {
-    const adminBtn = document.getElementById("adminBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-
-    function updateUI(user) {
-        const isAdmin = user && Array.isArray(user.roles) && user.roles.includes("admin");
-        adminBtn.style.display = isAdmin ? "inline-flex" : "none";
-        logoutBtn.style.display = user ? "inline-flex" : "none";
-    }
-
-    // Netlify Identity may not be loaded instantly — wait for it
-    function waitForIdentity() {
-        if (!window.netlifyIdentity) {
-            return setTimeout(waitForIdentity, 100);
-        }
-
-        // Initial check
-        updateUI(window.netlifyIdentity.currentUser());
-
-        // React to login / logout events
-        window.netlifyIdentity.on("login", (user) => {
-            updateUI(user);
-            window.netlifyIdentity.close();
-        });
-
-        window.netlifyIdentity.on("logout", () => {
-            updateUI(null);
-        });
-
-        // Wire up the logout button
-        logoutBtn.addEventListener("click", () => {
-            window.netlifyIdentity.logout();
-        });
-    }
-
-    waitForIdentity();
-})();
     </script>
 </body>
 </html>
