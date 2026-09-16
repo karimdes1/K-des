@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel | K-DES</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" />
+    <link rel="icon" type="image/svg+xml" href="icon/light-logo.svg" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/svg+xml" href="icon/dark-logo.svg" media="(prefers-color-scheme: dark)" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #38bdf8;
+            --accent-secondary: #a78bfa;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --success: #22c55e;
+            --danger: #f43f5e;
+            --warning: #f59e0b;
+            --gradient-1: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+            --shadow-glow: 0 0 40px rgba(56, 189, 248, 0.15);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary); color: var(--text-primary);
+            min-height: 100vh; overflow-x: hidden; line-height: 1.6;
+        }
+        .bg-particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .bg-particles::before {
+            content: ''; position: absolute; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.06) 0%, transparent 70%);
+            border-radius: 50%; top: -10%; left: -5%;
+            animation: float 20s ease-in-out infinite;
+        }
+        .bg-particles::after {
+            content: ''; position: absolute; width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.05) 0%, transparent 70%);
+            border-radius: 50%; bottom: -10%; right: -5%;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        .grid-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 1;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+        }
+        main { position: relative; z-index: 2; max-width: 1280px; margin: 0 auto; padding: 40px 24px 60px; }
+        header { margin-bottom: 40px; animation: fadeInDown 0.8s ease-out; }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .brand { display: flex; align-items: center; gap: 20px; width: 100%; }
+        .avatar-wrapper { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
+        .avatar-wrapper::before {
+            content: ''; position: absolute; inset: -2px; border-radius: 50%;
+            background: var(--gradient-1); opacity: 0.5;
+            animation: pulse-ring 3s ease-in-out infinite;
+        }
+        @keyframes pulse-ring {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.05); opacity: 0.25; }
+        }
+        .avatar {
+            width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--border); position: relative; z-index: 1;
+        }
+        .title-group { flex: 1; min-width: 0; }
+        .title-group .brand-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.75rem; font-weight: 600; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--accent); margin-bottom: 4px;
+        }
+        .title-group h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 700; line-height: 1.1;
+        }
+        .social-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+        .lang-btn, .back-btn {
+            width: 42px; height: 42px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 12px; border: 1px solid var(--border);
+            background: var(--bg-card); color: var(--text-secondary);
+            text-decoration: none; font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .lang-btn:hover, .back-btn:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-glow);
+        }
+        .back-btn { color: #fb7185; font-weight: 700; font-size: 1.1rem; }
+        .back-btn:hover { color: #f43f5e; }
+        .lang-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600; font-size: 0.8rem; width: auto; padding: 0 14px;
+        }
+
+        .warning-banner {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 16px; padding: 16px 20px;
+            display: flex; align-items: center; gap: 14px;
+            margin-bottom: 32px;
+            animation: fadeInUp 0.8s ease-out 0.1s both;
+        }
+        .warning-banner i { font-size: 1.4rem; color: var(--warning); flex-shrink: 0; }
+        .warning-banner p { color: var(--text-secondary); font-size: 0.92rem; }
+        .warning-banner strong { color: var(--warning); }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px; margin-bottom: 40px;
+        }
+        .category-card {
+            position: relative;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px; padding: 28px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0; transform: translateY(30px);
+            overflow: hidden;
+        }
+        .category-card.visible { opacity: 1; transform: translateY(0); }
+        .category-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--gradient-1); opacity: 0.7;
+        }
+        .category-card:hover {
+            border-color: var(--border-hover);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 60px rgba(56, 189, 248, 0.08);
+        }
+        .cat-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+        .cat-icon {
+            width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; color: var(--accent);
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            flex-shrink: 0;
+        }
+        .cat-icon.purple { color: var(--accent-secondary); background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.2); }
+        .cat-icon.green  { color: var(--success); background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.2); }
+        .cat-icon.pink   { color: #f472b6; background: rgba(244, 114, 182, 0.1); border-color: rgba(244, 114, 182, 0.2); }
+        .cat-header h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 600; }
+        .cat-count {
+            font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .cat-count .badge {
+            background: rgba(56, 189, 248, 0.12); color: var(--accent);
+            padding: 2px 10px; border-radius: 20px;
+            font-weight: 600; font-size: 0.78rem;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--border);
+            border-radius: 14px; padding: 24px 16px;
+            text-align: center; cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.01);
+            position: relative;
+        }
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.04);
+        }
+        .dropzone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .dropzone .dz-icon { font-size: 1.8rem; color: var(--accent); margin-bottom: 8px; display: block; }
+        .dropzone .dz-text { font-size: 0.88rem; color: var(--text-secondary); }
+        .dropzone .dz-text strong { color: var(--text-primary); font-weight: 600; }
+        .dropzone .dz-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+
+        .dual-dropzone { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .dual-dropzone .dz-label {
+            font-size: 0.75rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--text-muted); margin-bottom: 6px; text-align: center;
+        }
+        .dual-dropzone .dropzone { padding: 18px 12px; }
+        .dual-dropzone .dropzone .dz-icon { font-size: 1.4rem; }
+        .dual-dropzone .dropzone .dz-text { font-size: 0.8rem; }
+
+        .upload-btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; margin-top: 16px; padding: 12px 20px;
+            background: var(--gradient-1); color: white;
+            font-weight: 600; font-size: 0.9rem;
+            border-radius: 12px; border: none; cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.25);
+        }
+        .upload-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4);
+        }
+        .upload-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .preview-strip { display: none; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+        .preview-strip.active { display: flex; }
+        .preview-thumb {
+            position: relative; width: 64px; height: 64px;
+            border-radius: 10px; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        .progress-bar {
+            height: 4px; background: var(--border); border-radius: 2px;
+            overflow: hidden; margin-top: 12px; display: none;
+        }
+        .progress-bar.active { display: block; }
+        .progress-fill {
+            height: 100%; background: var(--gradient-1);
+            width: 0%; transition: width 0.3s ease;
+        }
+
+        .status-msg {
+            margin-top: 12px; padding: 10px 14px; border-radius: 10px;
+            font-size: 0.85rem; display: none; align-items: center; gap: 8px;
+        }
+        .status-msg.active { display: flex; }
+        .status-msg.success { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.25); color: var(--success); }
+        .status-msg.error { background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.25); color: var(--danger); }
+
+        .existing-gallery {
+            display: none; gap: 8px; margin-top: 16px;
+            padding-top: 16px; border-top: 1px solid var(--border);
+            flex-wrap: wrap; max-height: 180px; overflow-y: auto;
+        }
+        .existing-gallery.active { display: flex; }
+        .existing-thumb {
+            position: relative; width: 56px; height: 56px;
+            border-radius: 8px; overflow: hidden;
+            border: 1px solid var(--border);
+            transition: transform 0.2s ease;
+        }
+        .existing-thumb:hover { transform: scale(1.08); }
+        .existing-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        footer {
+            margin-top: 48px; padding-top: 32px;
+            border-top: 1px solid var(--border); text-align: center;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+        footer p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 8px; }
+        footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
+        footer a:hover { opacity: 0.8; }
+
+        .scroll-indicator {
+            position: fixed; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--gradient-1);
+            transform-origin: left; transform: scaleX(0); z-index: 100;
+        }
+
+        @media (max-width: 768px) {
+            main { padding: 24px 16px 40px; }
+            .brand { flex-wrap: wrap; }
+            .social-actions { width: 100%; justify-content: flex-end; margin-top: 8px; margin-left: 0; }
+            .categories-grid { grid-template-columns: 1fr; }
+            .dual-dropzone { grid-template-columns: 1fr; }
+        }
+        [dir="rtl"] .social-actions { margin-left: 0; margin-right: auto; }
+    </style>
+</head>
+<body>
+    <div class="scroll-indicator" id="scrollProgress"></div>
+    <div class="bg-particles"></div>
+    <div class="grid-overlay"></div>
+
+    <main>
+        <header>
+            <div class="brand">
+                <div class="avatar-wrapper">
+                    <img class="avatar" src="logo.avif" alt="K-DES logo" loading="lazy" />
+                </div>
+                <div class="title-group">
+                    <p class="brand-label" id="brandLabel">Karim Designer</p>
+                    <h1 id="pageTitle">Admin Panel</h1>
+                </div>
+                <div class="social-actions">
+                    <a class="back-btn" href="index.html" target="_self" aria-label="Back">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <button class="lang-btn" id="langSwitch" type="button">
+                        <span>AR</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="warning-banner">
+            <i class="bi bi-shield-lock"></i>
+            <p id="warningText">
+                <strong>Admin area.</strong> Images uploaded here are stored <strong>permanently</strong>
+                on Netlify Blobs and will survive redeploys.
+            </p>
+        </div>
+
+        <div class="categories-grid">
+            <!-- Logos -->
+            <section class="category-card" data-category="logos">
+                <div class="cat-header">
+                    <div class="cat-icon"><i class="bi bi-palette"></i></div>
+                    <h3 id="catTitle1">Add to Logos</h3>
+                </div>
+                <div class="cat-count">
+                    <span id="catCountLabel1">Current</span>
+                    <span class="badge" id="catCount1">0</span>
+                </div>
+                <label class="dropzone" data-drop="logos">
+                    <input type="file" accept="image/*" multiple data-input="logos" />
+                    <i class="bi bi-cloud-arrow-up dz-icon"></i>
+                    <div class="dz-text"><strong id="dzText1">Click or drop</strong> images here</div>
+                    <div class="dz-hint">PNG · JPG · AVIF · WEBP — multiple allowed</div>
+                </label>
+                <div class="preview-strip" data-preview="logos"></div>
+                <div class="progress-bar" data-progress="logos"><div class="progress-fill"></div></div>
+                <button class="upload-btn" data-upload="logos" disabled>
+                    <i class="bi bi-upload"></i>
+                    <span id="btnText1">Upload to Logos</span>
+                </button>
+                <div class="status-msg" data-status="logos"></div>
+                <div class="existing-gallery" data-existing="logos"></div>
+            </section>
+
+            <!-- Packages -->
+            <section class="category-card" data-category="packages">
+                <div class="cat-header">
+                    <div class="cat-icon purple"><i class="bi bi-box-seam"></i></div>
+                    <h3 id="catTitle2">Add to Basic Package</h3>
+                </div>
+                <div class="cat-count">
+                    <span id="catCountLabel2">Current</span>
+                    <span class="badge" id="catCount2">0</span>
+                </div>
+                <div class="dual-dropzone">
+                    <div>
+                        <div class="dz-label" id="dzLabelL">Logo (1:1)</div>
+                        <label class="dropzone" data-drop="packages-logo">
+                            <input type="file" accept="image/*" data-input="packages-logo" />
+                            <i class="bi bi-image dz-icon"></i>
+                            <div class="dz-text"><strong id="dzText2a">Drop</strong> logo</div>
+                        </label>
+                    </div>
+                    <div>
+                        <div class="dz-label" id="dzLabelB">Banner (16:9)</div>
+                        <label class="dropzone" data-drop="packages-banner">
+                            <input type="file" accept="image/*" data-input="packages-banner" />
+                            <i class="bi bi-card-image dz-icon"></i>
+                            <div class="dz-text"><strong id="dzText2b">Drop</strong> banner</div>
+                        </label>
+                    </div>
+                </div>
+                <div class="preview-strip" data-preview="packages"></div>
+                <div class="progress-bar" data-progress="packages"><div class="progress-fill"></div></div>
+                <button class="upload-btn" data-upload="packages" disabled>
+                    <i class="bi bi-upload"></i>
+                    <span id="btnText2">Upload to Basic Package</span>
+                </button>
+                <div class="status-msg" data-status="packages"></div>
+                <div class="existing-gallery" data-existing="packages"></div>
+            </section>
+
+            <!-- Posters -->
+            <section class="category-card" data-category="posters">
+                <div class="cat-header">
+                    <div class="cat-icon green"><i class="bi bi-easel"></i></div>
+                    <h3 id="catTitle3">Add to Posters</h3>
+                </div>
+                <div class="cat-count">
+                    <span id="catCountLabel3">Current</span>
+                    <span class="badge" id="catCount3">0</span>
+                </div>
+                <label class="dropzone" data-drop="posters">
+                    <input type="file" accept="image/*" multiple data-input="posters" />
+                    <i class="bi bi-cloud-arrow-up dz-icon"></i>
+                    <div class="dz-text"><strong id="dzText3">Click or drop</strong> posters here</div>
+                    <div class="dz-hint">Multiple allowed</div>
+                </label>
+                <div class="preview-strip" data-preview="posters"></div>
+                <div class="progress-bar" data-progress="posters"><div class="progress-fill"></div></div>
+                <button class="upload-btn" data-upload="posters" disabled>
+                    <i class="bi bi-upload"></i>
+                    <span id="btnText3">Upload to Posters</span>
+                </button>
+                <div class="status-msg" data-status="posters"></div>
+                <div class="existing-gallery" data-existing="posters"></div>
+            </section>
+
+            <!-- Websites -->
+            <section class="category-card" data-category="websites">
+                <div class="cat-header">
+                    <div class="cat-icon pink"><i class="bi bi-globe2"></i></div>
+                    <h3 id="catTitle4">Add to Websites</h3>
+                </div>
+                <div class="cat-count">
+                    <span id="catCountLabel4">Current</span>
+                    <span class="badge" id="catCount4">0</span>
+                </div>
+                <label class="dropzone" data-drop="websites">
+                    <input type="file" accept="image/*" multiple data-input="websites" />
+                    <i class="bi bi-cloud-arrow-up dz-icon"></i>
+                    <div class="dz-text"><strong id="dzText4">Click or drop</strong> website previews</div>
+                    <div class="dz-hint">Multiple allowed</div>
+                </label>
+                <div class="preview-strip" data-preview="websites"></div>
+                <div class="progress-bar" data-progress="websites"><div class="progress-fill"></div></div>
+                <button class="upload-btn" data-upload="websites" disabled>
+                    <i class="bi bi-upload"></i>
+                    <span id="btnText4">Upload to Websites</span>
+                </button>
+                <div class="status-msg" data-status="websites"></div>
+                <div class="existing-gallery" data-existing="websites"></div>
+            </section>
+        </div>
+
+        <footer>
+            <p id="footerText">Netlify Blobs · Permanent Storage</p>
+            <p><a href="https://wa.me/963937225412" target="_blank" rel="noopener" id="footerLink">Developed By Karim</a></p>
+        </footer>
+    </main>
+
+    <script>
+        const STORAGE_KEY = "kdesLanguage";
+        const langSwitch = document.getElementById("langSwitch");
+        const scrollProgress = document.getElementById("scrollProgress");
+
+        const selected = {
+            logos: [],
+            packages: { logo: null, banner: null },
+            posters: [],
+            websites: []
+        };
+
+        const translations = {
+            en: {
+                brand: "Karim Designer",
+                title: "Admin Panel",
+                warning: "<strong>Admin area.</strong> Images uploaded here are stored <strong>permanently</strong> on Netlify Blobs and will survive redeploys.",
+                catTitle1: "Add to Logos",
+                catTitle2: "Add to Basic Package",
+                catTitle3: "Add to Posters",
+                catTitle4: "Add to Websites",
+                catCountLabel: "Current",
+                dzText1: "Click or drop", dzText2a: "Drop", dzText2b: "Drop",
+                dzText3: "Click or drop", dzText4: "Click or drop",
+                dzLabelL: "Logo (1:1)", dzLabelB: "Banner (16:9)",
+                btnText1: "Upload to Logos", btnText2: "Upload to Basic Package",
+                btnText3: "Upload to Posters", btnText4: "Upload to Websites",
+                footer: "Netlify Blobs · Permanent Storage",
+                footerLink: "Developed By Karim",
+                uploading: "Uploading…",
+                success: "Uploaded successfully!",
+                error: "Upload failed.",
+                noFile: "Please select a file first."
+            },
+            ar: {
+                brand: "المصمم كريم",
+                title: "لوحة التحكم",
+                warning: "<strong>منطقة إدارية.</strong> الصور المرفوعة هنا تُخزَّن <strong>بشكل دائم</strong> على Netlify Blobs وتبقى حتى بعد إعادة النشر.",
+                catTitle1: "إضافة إلى الشعارات",
+                catTitle2: "إضافة إلى البكج الأساسي",
+                catTitle3: "إضافة إلى المناشير",
+                catTitle4: "إضافة إلى المواقع",
+                catCountLabel: "الحالي",
+                dzText1: "اضغط أو أفلت", dzText2a: "أفلت", dzText2b: "أفلت",
+                dzText3: "اضغط أو أفلت", dzText4: "اضغط أو أفلت",
+                dzLabelL: "شعار (1:1)", dzLabelB: "بانر (16:9)",
+                btnText1: "رفع إلى الشعارات", btnText2: "رفع إلى البكج الأساسي",
+                btnText3: "رفع إلى المناشير", btnText4: "رفع إلى المواقع",
+                footer: "Netlify Blobs · تخزين دائم",
+                footerLink: "تطوير: كريم",
+                uploading: "جارٍ الرفع…",
+                success: "تم الرفع بنجاح!",
+                error: "فشل الرفع.",
+                noFile: "يرجى اختيار ملف أولاً."
+            }
+        };
+
+        function getStoredLanguage() {
+            return localStorage.getItem(STORAGE_KEY) === "ar" ? "ar" : "en";
+        }
+
+        function setLanguage(lang) {
+            localStorage.setItem(STORAGE_KEY, lang);
+            document.documentElement.lang = lang === "ar" ? "ar" : "en";
+            document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+            const t = translations[lang];
+            document.getElementById("brandLabel").textContent = t.brand;
+            document.getElementById("pageTitle").textContent = t.title;
+            document.getElementById("warningText").innerHTML = t.warning;
+            document.getElementById("catTitle1").textContent = t.catTitle1;
+            document.getElementById("catTitle2").textContent = t.catTitle2;
+            document.getElementById("catTitle3").textContent = t.catTitle3;
+            document.getElementById("catTitle4").textContent = t.catTitle4;
+            document.querySelectorAll("[id^='catCountLabel']").forEach(el => el.textContent = t.catCountLabel);
+            document.getElementById("dzText1").textContent = t.dzText1;
+            document.getElementById("dzText2a").textContent = t.dzText2a;
+            document.getElementById("dzText2b").textContent = t.dzText2b;
+            document.getElementById("dzText3").textContent = t.dzText3;
+            document.getElementById("dzText4").textContent = t.dzText4;
+            document.getElementById("dzLabelL").textContent = t.dzLabelL;
+            document.getElementById("dzLabelB").textContent = t.dzLabelB;
+            document.getElementById("btnText1").textContent = t.btnText1;
+            document.getElementById("btnText2").textContent = t.btnText2;
+            document.getElementById("btnText3").textContent = t.btnText3;
+            document.getElementById("btnText4").textContent = t.btnText4;
+            document.getElementById("footerText").textContent = t.footer;
+            document.getElementById("footerLink").textContent = t.footerLink;
+            langSwitch.querySelector("span").textContent = lang === "ar" ? "EN" : "AR";
+        }
+
+        // ===== File selection =====
+        document.querySelectorAll("input[type=file][data-input]").forEach((input) => {
+            input.addEventListener("change", (e) => {
+                handleFiles(input.dataset.input, Array.from(e.target.files));
+            });
+        });
+
+        document.querySelectorAll(".dropzone").forEach((zone) => {
+            ["dragenter", "dragover"].forEach((ev) => {
+                zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.add("dragover"); });
+            });
+            ["dragleave", "drop"].forEach((ev) => {
+                zone.addEventListener(ev, (e) => { e.preventDefault(); zone.classList.remove("dragover"); });
+            });
+            zone.addEventListener("drop", (e) => {
+                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+                handleFiles(zone.dataset.drop, files);
+            });
+        });
+
+        function handleFiles(key, files) {
+            if (key === "packages-logo") {
+                selected.packages.logo = files[0] || null;
+                renderPreview("packages");
+                updatePackagesButton();
+                return;
+            }
+            if (key === "packages-banner") {
+                selected.packages.banner = files[0] || null;
+                renderPreview("packages");
+                updatePackagesButton();
+                return;
+            }
+            selected[key] = files;
+            renderPreview(key);
+            updateButton(key);
+        }
+
+        function renderPreview(catKey) {
+            const strip = document.querySelector(`[data-preview="${catKey}"]`);
+            if (!strip) return;
+            strip.innerHTML = "";
+            let files = [];
+            if (catKey === "packages") {
+                if (selected.packages.logo) files.push(selected.packages.logo);
+                if (selected.packages.banner) files.push(selected.packages.banner);
+            } else {
+                files = selected[catKey] || [];
+            }
+            if (files.length === 0) { strip.classList.remove("active"); return; }
+            files.forEach((file) => {
+                const thumb = document.createElement("div");
+                thumb.className = "preview-thumb";
+                const img = document.createElement("img");
+                img.src = URL.createObjectURL(file);
+                img.onload = () => URL.revokeObjectURL(img.src);
+                thumb.appendChild(img);
+                strip.appendChild(thumb);
+            });
+            strip.classList.add("active");
+        }
+
+        function updateButton(catKey) {
+            const btn = document.querySelector(`[data-upload="${catKey}"]`);
+            if (!btn) return;
+            btn.disabled = (selected[catKey] || []).length === 0;
+        }
+
+        function updatePackagesButton() {
+            const btn = document.querySelector(`[data-upload="packages"]`);
+            if (!btn) return;
+            btn.disabled = !(selected.packages.logo && selected.packages.banner);
+        }
+
+        // ===== Upload =====
+        document.querySelectorAll("[data-upload]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const catKey = btn.dataset.upload;
+                if (catKey === "packages") uploadPackages();
+                else uploadCategory(catKey);
+            });
+        });
+
+        async function uploadCategory(catKey) {
+            const lang = document.documentElement.lang === "ar" ? "ar" : "en";
+            const t = translations[lang];
+            const files = selected[catKey] || [];
+            if (files.length === 0) { showStatus(catKey, "error", t.noFile); return; }
+            setLoading(catKey, true, t.uploading);
+            try {
+                const formData = new FormData();
+                formData.append("category", catKey);
+                files.forEach((f) => formData.append("files", f));
+                const res = await fetch("/api/upload", { method: "POST", body: formData });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || "Upload failed");
+                showStatus(catKey, "success", t.success);
+                selected[catKey] = [];
+                renderPreview(catKey);
+                updateButton(catKey);
+                const input = document.querySelector(`[data-input="${catKey}"]`);
+                if (input) input.value = "";
+                await refreshExisting();
+            } catch (err) {
+                showStatus(catKey, "error", t.error + " " + err.message);
+            } finally {
+                setLoading(catKey, false, t.uploading);
+            }
+        }
+
+        async function uploadPackages() {
+            const lang = document.documentElement.lang === "ar" ? "ar" : "en";
+            const t = translations[lang];
+            if (!selected.packages.logo || !selected.packages.banner) {
+                showStatus("packages", "error", t.noFile);
+                return;
+            }
+            setLoading("packages", true, t.uploading);
+            try {
+                const fd1 = new FormData();
+                fd1.append("category", "packages");
+                fd1.append("subtype", "logo");
+                fd1.append("files", selected.packages.logo);
+                let res = await fetch("/api/upload", { method: "POST", body: fd1 });
+                if (!res.ok) throw new Error("Logo upload failed");
+
+                const fd2 = new FormData();
+                fd2.append("category", "packages");
+                fd2.append("subtype", "banner");
+                fd2.append("files", selected.packages.banner);
+                res = await fetch("/api/upload", { method: "POST", body: fd2 });
+                if (!res.ok) throw new Error("Banner upload failed");
+
+                showStatus("packages", "success", t.success);
+                selected.packages = { logo: null, banner: null };
+                renderPreview("packages");
+                updatePackagesButton();
+                document.querySelector('[data-input="packages-logo"]').value = "";
+                document.querySelector('[data-input="packages-banner"]').value = "";
+                await refreshExisting();
+            } catch (err) {
+                showStatus("packages", "error", t.error + " " + err.message);
+            } finally {
+                setLoading("packages", false, t.uploading);
+            }
+        }
+
+        function setLoading(catKey, isLoading, uploadingText) {
+            const btn = document.querySelector(`[data-upload="${catKey}"]`);
+            const prog = document.querySelector(`[data-progress="${catKey}"]`);
+            const fill = prog ? prog.querySelector(".progress-fill") : null;
+            if (!btn) return;
+            const originalText = btn.querySelector("span").textContent;
+            if (isLoading) {
+                btn.disabled = true;
+                btn.querySelector("span").textContent = uploadingText;
+                if (prog) prog.classList.add("active");
+                if (fill) {
+                    fill.style.width = "0%";
+                    let w = 0;
+                    const iv = setInterval(() => {
+                        w = Math.min(w + Math.random() * 15, 90);
+                        fill.style.width = w + "%";
+                    }, 200);
+                    btn._progressInterval = iv;
+                }
+            } else {
+                if (btn._progressInterval) clearInterval(btn._progressInterval);
+                if (fill) fill.style.width = "100%";
+                setTimeout(() => {
+                    if (prog) prog.classList.remove("active");
+                    btn.querySelector("span").textContent = originalText;
+                    btn.disabled = false;
+                }, 400);
+            }
+        }
+
+        function showStatus(catKey, type, msg) {
+            const el = document.querySelector(`[data-status="${catKey}"]`);
+            if (!el) return;
+            el.className = `status-msg active ${type}`;
+            el.innerHTML = `<i class="bi bi-${type === "success" ? "check-circle" : "exclamation-triangle"}"></i> ${msg}`;
+            setTimeout(() => el.classList.remove("active"), 4000);
+        }
+
+        async function refreshExisting() {
+            try {
+                const res = await fetch("/api/list");
+                if (!res.ok) return;
+                const data = await res.json();
+                const map = { logos: "1", packages: "2", posters: "3", websites: "4" };
+                for (const cat of Object.keys(map)) {
+                    const countEl = document.getElementById("catCount" + map[cat]);
+                    if (countEl) countEl.textContent = (data[cat] || []).length;
+
+                    const gallery = document.querySelector(`[data-existing="${cat}"]`);
+                    if (!gallery) continue;
+                    gallery.innerHTML = "";
+                    (data[cat] || []).forEach((item) => {
+                        const thumb = document.createElement("div");
+                        thumb.className = "existing-thumb";
+                        const img = document.createElement("img");
+                        img.src = item.url;
+                        img.loading = "lazy";
+                        thumb.appendChild(img);
+                        gallery.appendChild(thumb);
+                    });
+                    if ((data[cat] || []).length > 0) gallery.classList.add("active");
+                }
+            } catch (err) { /* silent */ }
+        }
+
+        langSwitch.addEventListener("click", () => {
+            const current = document.documentElement.lang === "ar" ? "ar" : "en";
+            setLanguage(current === "ar" ? "en" : "ar");
+        });
+
+        window.addEventListener("scroll", () => {
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            scrollProgress.style.transform = `scaleX(${scrollTop / scrollHeight})`;
+        });
+
+        document.querySelectorAll(".category-card").forEach((card, i) => {
+            setTimeout(() => card.classList.add("visible"), i * 100);
+        });
+
+        setLanguage(getStoredLanguage());
+        refreshExisting();
+    </script>
+</body>
+</html>
