@@ -10,13 +10,4 @@
   status = 200
   
 
-[[redirects]]
-  from = "/admin.html"
-  to = "/admin.html"
-  status = 200
-  conditions = { Role = ["admin"] }
-
-[[redirects]]
-  from = "/admin.html"
-  to = "/index.html"
-  status = 302  
+  

@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="text/javascript" src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+
     <style>
         :root {
             color-scheme: dark;
@@ -274,30 +274,7 @@
             color: #38bdf8;
             box-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
         }
-.social-btn.admin-btn {
-    color: #fbbf24;
-}
-.social-btn.admin-btn:hover {
-    color: #f59e0b;
-    box-shadow: 0 0 30px rgba(245, 158, 11, 0.25);
-}
 
-.social-btn.logout-btn {
-    color: #94a3b8;
-}
-.social-btn.logout-btn:hover {
-    color: #f43f5e;
-    box-shadow: 0 0 30px rgba(244, 63, 94, 0.25);
-}
-
-/* Small pulse to draw attention to admin button */
-.social-btn.admin-btn {
-    animation: admin-pulse 2.5s ease-in-out infinite;
-}
-@keyframes admin-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-    50%      { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
-}
         .lang-btn {
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 600;
@@ -729,7 +706,6 @@
 </head>
 <body>
     <div class="scroll-indicator" id="scrollProgress"></div>
-    <div data-netlify-identity-menu></div>
     <div class="bg-particles"></div>
     <div class="grid-overlay"></div>
 
@@ -744,29 +720,18 @@
                     <h1 id="pageTitle">Creative Portfolio</h1>
                     <p class="subtitle" id="subtitle">Graphic Designer & Visual Artist</p>
                 </div>
-            <div class="social-actions">
-    <a class="social-btn whatsapp" href="https://wa.me/963937225412" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-        <i class="bi bi-whatsapp"></i>
-    </a>
-    <a class="social-btn telegram" href="https://t.me/Karim_Des1" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
-        <i class="bi bi-telegram"></i>
-    </a>
-
-    <!-- Admin panel button — only visible when logged in as admin -->
-    <a class="social-btn admin-btn" id="adminBtn" href="admin.html" style="display:none;" aria-label="Admin Panel">
-        <i class="bi bi-gear"></i>
-    </a>
-
-    <!-- Logout button — only visible when logged in -->
-    <button class="social-btn logout-btn" id="logoutBtn" type="button" style="display:none;" aria-label="Logout">
-        <i class="bi bi-box-arrow-right"></i>
-    </button>
-
-    <button class="lang-btn" id="langSwitch" type="button">
-        <span>AR</span>
-    </button>
-</div>
-</div>
+                <div class="social-actions">
+                    <a class="social-btn whatsapp" href="https://wa.me/963937225412" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                        <i class="bi bi-whatsapp"></i>
+                    </a>
+                    <a class="social-btn telegram" href="https://t.me/Karim_Des1" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
+                        <i class="bi bi-telegram"></i>
+                    </a>
+                    <button class="lang-btn" id="langSwitch" type="button" aria-label="Switch language">
+                        <span>AR</span>
+                    </button>
+                </div>
+            </div>
         </header>
 
         <div class="lead-section">
@@ -903,45 +868,6 @@
     </main>
 
     <script>
-        
-        // ===== Netlify Identity: show admin button only for admins =====
-(function initAdminButton() {
-    const adminBtn = document.getElementById("adminBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-
-    function updateUI(user) {
-        const isAdmin = user && Array.isArray(user.roles) && user.roles.includes("admin");
-        adminBtn.style.display = isAdmin ? "inline-flex" : "none";
-        logoutBtn.style.display = user ? "inline-flex" : "none";
-    }
-
-    // Netlify Identity may not be loaded instantly — wait for it
-    function waitForIdentity() {
-        if (!window.netlifyIdentity) {
-            return setTimeout(waitForIdentity, 100);
-        }
-
-        // Initial check
-        updateUI(window.netlifyIdentity.currentUser());
-
-        // React to login / logout events
-        window.netlifyIdentity.on("login", (user) => {
-            updateUI(user);
-            window.netlifyIdentity.close();
-        });
-
-        window.netlifyIdentity.on("logout", () => {
-            updateUI(null);
-        });
-
-        // Wire up the logout button
-        logoutBtn.addEventListener("click", () => {
-            window.netlifyIdentity.logout();
-        });
-    }
-
-    waitForIdentity();
-})();
         const STORAGE_KEY = "kdesLanguage";
         const langSwitch = document.getElementById("langSwitch");
         const scrollProgress = document.getElementById("scrollProgress");
@@ -1114,7 +1040,6 @@
         });
 
         setLanguage(getStoredLanguage());
-
     </script>
 </body>
 </html>
