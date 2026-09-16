@@ -262,9 +262,52 @@
             border-radius: 8px; overflow: hidden;
             border: 1px solid var(--border);
             transition: transform 0.2s ease;
+            isolation: isolate;
         }
         .existing-thumb:hover { transform: scale(1.08); }
         .existing-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Remove button on existing thumbnails */
+        .existing-thumb .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(244, 63, 94, 0.95);
+            color: #fff;
+            border: none;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transform: scale(0.6);
+            transition: all 0.2s ease;
+            z-index: 3;
+            padding: 0;
+            line-height: 1;
+        }
+        .existing-thumb:hover .remove-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .existing-thumb .remove-btn:hover {
+            background: #f43f5e;
+            transform: scale(1.15);
+        }
+        .existing-thumb .remove-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+        .existing-thumb.deleting {
+            opacity: 0.4;
+            pointer-events: none;
+            filter: grayscale(1);
+        }
 
         footer {
             margin-top: 48px; padding-top: 32px;
@@ -321,7 +364,7 @@
             <i class="bi bi-shield-lock"></i>
             <p id="warningText">
                 <strong>Admin area.</strong> Images uploaded here are stored <strong>permanently</strong>
-                on Netlify Blobs and will survive redeploys.
+                on Netlify Blobs. Hover over any thumbnail and click the red ✕ to remove it.
             </p>
         </div>
 
@@ -465,7 +508,7 @@
             en: {
                 brand: "Karim Designer",
                 title: "Admin Panel",
-                warning: "<strong>Admin area.</strong> Images uploaded here are stored <strong>permanently</strong> on Netlify Blobs and will survive redeploys.",
+                warning: "<strong>Admin area.</strong> Images uploaded here are stored <strong>permanently</strong> on Netlify Blobs. Hover over any thumbnail and click the red ✕ to remove it.",
                 catTitle1: "Add to Logos",
                 catTitle2: "Add to Basic Package",
                 catTitle3: "Add to Posters",
@@ -481,12 +524,17 @@
                 uploading: "Uploading…",
                 success: "Uploaded successfully!",
                 error: "Upload failed.",
-                noFile: "Please select a file first."
+                noFile: "Please select a file first.",
+                deleting: "Deleting…",
+                deleted: "Image deleted successfully.",
+                deleteError: "Could not delete image.",
+                confirmDelete: "Permanently delete this image?",
+                removeBtn: "Remove image"
             },
             ar: {
                 brand: "المصمم كريم",
                 title: "لوحة التحكم",
-                warning: "<strong>منطقة إدارية.</strong> الصور المرفوعة هنا تُخزَّن <strong>بشكل دائم</strong> على Netlify Blobs وتبقى حتى بعد إعادة النشر.",
+                warning: "<strong>منطقة إدارية.</strong> الصور المرفوعة هنا تُخزَّن <strong>بشكل دائم</strong> على Netlify Blobs. مرر فوق أي صورة مصغّرة واضغط على ✕ الأحمر لحذفها.",
                 catTitle1: "إضافة إلى الشعارات",
                 catTitle2: "إضافة إلى البكج الأساسي",
                 catTitle3: "إضافة إلى المناشير",
@@ -502,7 +550,12 @@
                 uploading: "جارٍ الرفع…",
                 success: "تم الرفع بنجاح!",
                 error: "فشل الرفع.",
-                noFile: "يرجى اختيار ملف أولاً."
+                noFile: "يرجى اختيار ملف أولاً.",
+                deleting: "جارٍ الحذف…",
+                deleted: "تم حذف الصورة بنجاح.",
+                deleteError: "لم يتم حذف الصورة.",
+                confirmDelete: "هل تريد حذف هذه الصورة نهائياً؟",
+                removeBtn: "حذف الصورة"
             }
         };
 
@@ -724,12 +777,14 @@
             setTimeout(() => el.classList.remove("active"), 4000);
         }
 
+        // ===== Load existing images with remove buttons =====
         async function refreshExisting() {
             try {
                 const res = await fetch("/api/list");
                 if (!res.ok) return;
                 const data = await res.json();
                 const map = { logos: "1", packages: "2", posters: "3", websites: "4" };
+
                 for (const cat of Object.keys(map)) {
                     const countEl = document.getElementById("catCount" + map[cat]);
                     if (countEl) countEl.textContent = (data[cat] || []).length;
@@ -737,23 +792,102 @@
                     const gallery = document.querySelector(`[data-existing="${cat}"]`);
                     if (!gallery) continue;
                     gallery.innerHTML = "";
+
                     (data[cat] || []).forEach((item) => {
                         const thumb = document.createElement("div");
                         thumb.className = "existing-thumb";
+                        thumb.dataset.key = item.key;
+
                         const img = document.createElement("img");
                         img.src = item.url;
                         img.loading = "lazy";
+                        img.alt = item.key;
                         thumb.appendChild(img);
+
+                        const btn = document.createElement("button");
+                        btn.className = "remove-btn";
+                        btn.type = "button";
+                        btn.title = translations[document.documentElement.lang === "ar" ? "ar" : "en"].removeBtn;
+                        btn.innerHTML = '<i class="bi bi-x"></i>';
+                        btn.addEventListener("click", (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleRemove(thumb, item.key, cat);
+                        });
+                        thumb.appendChild(btn);
+
                         gallery.appendChild(thumb);
                     });
+
                     if ((data[cat] || []).length > 0) gallery.classList.add("active");
+                    else gallery.classList.remove("active");
                 }
-            } catch (err) { /* silent */ }
+            } catch (err) {
+                console.warn("Could not refresh existing:", err);
+            }
         }
 
+        // ===== Remove handler =====
+        async function handleRemove(thumbEl, key, catKey) {
+            const lang = document.documentElement.lang === "ar" ? "ar" : "en";
+            const t = translations[lang];
+
+            if (!confirm(t.confirmDelete)) return;
+
+            thumbEl.classList.add("deleting");
+            const btn = thumbEl.querySelector(".remove-btn");
+            if (btn) btn.disabled = true;
+
+            try {
+                const res = await fetch("/api/delete", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ keys: [key] }),
+                });
+
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    throw new Error(data.error || "Delete failed");
+                }
+
+                // Animate out
+                thumbEl.style.transition = "opacity 0.25s ease, transform 0.25s ease";
+                thumbEl.style.opacity = "0";
+                thumbEl.style.transform = "scale(0.7)";
+                setTimeout(() => thumbEl.remove(), 250);
+
+                // Hide gallery if empty
+                const gallery = document.querySelector(`[data-existing="${catKey}"]`);
+                setTimeout(() => {
+                    if (gallery && gallery.children.length === 0) {
+                        gallery.classList.remove("active");
+                    }
+                }, 300);
+
+                // Update count badge
+                const map = { logos: "1", packages: "2", posters: "3", websites: "4" };
+                const countEl = document.getElementById("catCount" + map[catKey]);
+                if (countEl) {
+                    const current = parseInt(countEl.textContent, 10) || 0;
+                    countEl.textContent = Math.max(0, current - 1);
+                }
+
+                showStatus(catKey, "success", t.deleted);
+            } catch (err) {
+                thumbEl.classList.remove("deleting");
+                if (btn) btn.disabled = false;
+                showStatus(catKey, "error", t.deleteError + " " + err.message);
+            }
+        }
+
+        // ===== Language toggle =====
         langSwitch.addEventListener("click", () => {
             const current = document.documentElement.lang === "ar" ? "ar" : "en";
             setLanguage(current === "ar" ? "en" : "ar");
+            // Refresh tooltips with the new language
+            document.querySelectorAll(".remove-btn").forEach(b => {
+                b.title = translations[document.documentElement.lang === "ar" ? "ar" : "en"].removeBtn;
+            });
         });
 
         window.addEventListener("scroll", () => {
